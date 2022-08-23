@@ -73,6 +73,9 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 
 	private String groupId;
 
+	/**
+	 * 可以是多个Topic
+	 */
 	private final Collection<String> topics = new ArrayList<>();
 
 	private Pattern topicPattern;
@@ -448,6 +451,15 @@ public abstract class AbstractKafkaListenerEndpoint<K, V>
 
 	@Override
 	public void afterPropertiesSet() {
+		/**
+		 *
+		 * 问题：KafkaListenerEndpoint 接口类型的 bean是 什么时候被创建 并注册到 容器中的？
+		 *
+		 *在KafkaListenerAnnotationBeanPostProcessor#processKafkaListener方法中会  根据方法上的 KafkaListener 注解， 来创建一个
+		 * MethodKafkaListenerEndpoint 对象， 然后将 @KafkaListener 注解中的属性设置到Endpoint对象中。
+		 *
+		 *
+		 */
 		boolean topicsEmpty = getTopics().isEmpty();
 		boolean topicPartitionsEmpty = ObjectUtils.isEmpty(getTopicPartitionsToAssign());
 		if (!topicsEmpty && !topicPartitionsEmpty) {

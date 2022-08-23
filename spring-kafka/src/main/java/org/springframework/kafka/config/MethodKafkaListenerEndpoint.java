@@ -60,6 +60,9 @@ import org.springframework.util.Assert;
  */
 public class MethodKafkaListenerEndpoint<K, V> extends AbstractKafkaListenerEndpoint<K, V> {
 
+	/**
+	 * KafkaListenerEndpoint提供了一个方法来处理这个端点的传入消息。
+	 */
 	private final LogAccessor logger = new LogAccessor(LogFactory.getLog(getClass()));
 
 	private Object bean;

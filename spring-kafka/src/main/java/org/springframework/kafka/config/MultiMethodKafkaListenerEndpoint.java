@@ -41,6 +41,11 @@ import org.springframework.validation.Validator;
  */
 public class MultiMethodKafkaListenerEndpoint<K, V> extends MethodKafkaListenerEndpoint<K, V> {
 
+	/**
+	 * 基于org.springframework.kafka. annotationationkafkahandler的
+	 * 几个POJO方法的MethodKafkaListenerEndpoint扩展。
+	 *
+	 */
 	private final List<Method> methods;
 
 	private final Method defaultMethod;

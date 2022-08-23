@@ -70,6 +70,7 @@ import org.springframework.util.StringUtils;
  * @see MessageListenerContainer
  * @see KafkaListenerContainerFactory
  */
+@SuppressWarnings("all")
 public class KafkaListenerEndpointRegistry implements ListenerContainerRegistry, DisposableBean, SmartLifecycle,
 		ApplicationContextAware, ApplicationListener<ContextRefreshedEvent> {
 
@@ -77,6 +78,9 @@ public class KafkaListenerEndpointRegistry implements ListenerContainerRegistry,
 
 	private final Map<String, MessageListenerContainer> unregisteredContainers = new ConcurrentHashMap<>();
 
+	/**
+	 *     //存放所有listenerContainers线程安全容器
+	 */
 	private final Map<String, MessageListenerContainer> listenerContainers = new ConcurrentHashMap<>();
 
 	private int phase = AbstractMessageListenerContainer.DEFAULT_PHASE;
@@ -207,6 +211,13 @@ public class KafkaListenerEndpointRegistry implements ListenerContainerRegistry,
 	@SuppressWarnings("unchecked")
 	public void registerListenerContainer(KafkaListenerEndpoint endpoint, KafkaListenerContainerFactory<?> factory,
 			boolean startImmediately) {
+		/**
+		 *
+		 * 为给定的KafkaListenerEndpoint创建一个消息侦听器容器。
+		 * 这就创建了必要的基础设施来尊重端点的配置。
+		 * startimimmediate标志决定容器是否应该立即启动。
+		 *
+		 */
 
 		Assert.notNull(endpoint, "Endpoint must not be null");
 		Assert.notNull(factory, "Factory must not be null");
@@ -216,6 +227,8 @@ public class KafkaListenerEndpointRegistry implements ListenerContainerRegistry,
 		synchronized (this.listenerContainers) {
 			Assert.state(!this.listenerContainers.containsKey(id),
 					"Another endpoint is already registered with id '" + id + "'");
+			// 1.创建消息监听容器
+
 			MessageListenerContainer container = createListenerContainer(endpoint, factory);
 			this.listenerContainers.put(id, container);
 			ConfigurableApplicationContext appContext = this.applicationContext;
@@ -236,6 +249,8 @@ public class KafkaListenerEndpointRegistry implements ListenerContainerRegistry,
 				containerGroup.add(container);
 				group.addContainers(container);
 			}
+			// 2.是否立即启动消息监听
+
 			if (startImmediately) {
 				startIfNecessary(container);
 			}
@@ -261,6 +276,10 @@ public class KafkaListenerEndpointRegistry implements ListenerContainerRegistry,
 				mkle.setMethod(ehm.getMethod());
 			}
 		}
+		/**
+		 * 根据 MethodKafkaListenerEndpoint对象创建一个MessageListenerContainer对象
+		 *
+		 */
 		MessageListenerContainer listenerContainer = factory.createListenerContainer(endpoint);
 
 		if (listenerContainer instanceof InitializingBean) {
@@ -363,6 +382,9 @@ public class KafkaListenerEndpointRegistry implements ListenerContainerRegistry,
 	 * @see MessageListenerContainer#isAutoStartup()
 	 */
 	private void startIfNecessary(MessageListenerContainer listenerContainer) {
+		// 启动消息监听
+		// 到这一步之后，消息监听以及处理都是KafkaMessageListenerContainer的逻辑
+		// 到此也就打通了@KafkaListener到MessageListenerContainer消息监听容器的逻辑
 		if ((this.contextRefreshed && this.alwaysStartAfterRefresh) || listenerContainer.isAutoStartup()) {
 			listenerContainer.start();
 		}

@@ -341,6 +341,21 @@ public abstract class AbstractKafkaListenerContainerFactory<C extends AbstractMe
 	@SuppressWarnings("unchecked")
 	@Override
 	public C createListenerContainer(KafkaListenerEndpoint endpoint) {
+		/**
+		 * 根据 MethodKafakListenerEndpoint对象创建一个 Container对象。
+		 *
+		 * MethodKafakListenerEndpoint对象是  容器后置处理器中  通过解析方法上的@kafkaListener 注解得到的对象。
+		 * 这个Endpoint 持有了 被注解标记的方法。
+		 *
+		 * createContainerInstance 方法仅仅是根据 Endpoint中 设置的topic属性 创建了一个container对象。
+		 *
+		 * 对于这个Container对象 他更为重要的部分是如何消费消息，也就是 需要关联上Endpoint中的method
+		 *
+		 * 在下面的 endpoint.setUpListenerContainer 方法中 就会通过 MethodKafkaListenerEndpoint#createMessageListener
+		 * 创建一个MessageListener,这个MessageListener 中会持有method
+		 * 最终再将这个messageListener 设置到Container中： container.setupMessageListener(messageListener);
+		 *
+		 */
 		C instance = createContainerInstance(endpoint);
 		JavaUtils.INSTANCE
 				.acceptIfNotNull(endpoint.getId(), instance::setBeanName);

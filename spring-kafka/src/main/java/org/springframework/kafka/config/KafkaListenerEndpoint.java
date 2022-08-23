@@ -36,14 +36,19 @@ import org.springframework.lang.Nullable;
 public interface KafkaListenerEndpoint {
 
 	/**
+	 * Kafka侦听器端点模型。
+	 * 是否可以用于kafkalistenerconfigururer以编程方式注册端点
+	 */
+
+	/**
 	 * Return the id of this endpoint.
 	 * @return the id of this endpoint. The id can be further qualified
 	 * when the endpoint is resolved against its actual listener
-	 * container.
+	 * container. //这个端点的id。当针对端点的实际侦听器容器解析端点时，可以进一步限定该id。
 	 * @see KafkaListenerContainerFactory#createListenerContainer
 	 */
 	@Nullable
-	String getId();
+	String getId();//这个端点的id。当针对端点的实际侦听器容器解析端点时，可以进一步限定该id。
 
 	/**
 	 * Return the groupId of this endpoint - if present, overrides the
@@ -52,14 +57,14 @@ public interface KafkaListenerEndpoint {
 	 * @since 1.3
 	 */
 	@Nullable
-	String getGroupId();
+	String getGroupId();//返回此端点的groupId—如果存在，则覆盖该组。消费工厂的Id属性。
 
 	/**
 	 * Return the group of this endpoint or null if not in a group.
 	 * @return the group of this endpoint or null if not in a group.
 	 */
 	@Nullable
-	String getGroup();
+	String getGroup();//返回此端点所在的组，如果不在组中则返回null。
 
 	/**
 	 * Return the topics for this endpoint.
@@ -90,7 +95,7 @@ public interface KafkaListenerEndpoint {
 	 * @since 2.1.1
 	 */
 	@Nullable
-	String getClientIdPrefix();
+	String getClientIdPrefix();//返回容器的客户端id前缀;当使用并发时，它将以'-n'作为后缀，以提供一个唯一的id。
 
 	/**
 	 * Return the concurrency for this endpoint's container.
@@ -98,7 +103,7 @@ public interface KafkaListenerEndpoint {
 	 * @since 2.2
 	 */
 	@Nullable
-	Integer getConcurrency();
+	Integer getConcurrency();//返回此端点容器的并发性。
 
 	/**
 	 * Return the autoStartup for this endpoint's container.
@@ -106,13 +111,19 @@ public interface KafkaListenerEndpoint {
 	 * @since 2.2
 	 */
 	@Nullable
-	Boolean getAutoStartup();
+	Boolean getAutoStartup();//返回此端点容器的autoStartup。
 
 	/**
 	 * Get the consumer properties that will be merged with the consumer properties
 	 * provided by the consumer factory; properties here will supersede any with the same
 	 * name(s) in the consumer factory.
 	 * {@code group.id} and {@code client.id} are ignored.
+	 *
+	 * <p>
+	 *     获取将与消费者工厂提供的消费者属性合并的消费者属性;此处的属性将取代消费者工厂中具有相同
+	 *     名称的任何属性。组。id和客户端。id被忽略。
+	 * </p>
+	 *
 	 * @return the properties.
 	 * @since 2.1.4
 	 * @see org.apache.kafka.clients.consumer.ConsumerConfig
@@ -132,6 +143,13 @@ public interface KafkaListenerEndpoint {
 	 * setting the {@code queues} and the {@code messageListener} to
 	 * use but an implementation may override any default setting that
 	 * was already set.
+	 *
+	 * <p>
+	 * 使用此端点定义的模型设置指定的消息侦听器容器。
+	 * 该端点必须提供所请求的指定容器的缺失选项，以使其可用。通常，
+	 * 这是关于设置要使用的队列和messageListener，但实现可能会覆盖已经设置的任何默认设置。
+	 * </p>
+	 *
 	 * @param listenerContainer the listener container to configure
 	 * @param messageConverter the message converter - can be null
 	 */
@@ -143,10 +161,11 @@ public interface KafkaListenerEndpoint {
 	 * @return true to split.
 	 * @since 2.3.5
 	 */
-	boolean isSplitIterables();
+	boolean isSplitIterables();//当为true时，Iterable返回的结果将被分割成离散的记录。
 
 	/**
 	 * Get the listener info to insert in the record header.
+	 * //获取要插入到记录头中的侦听器信息。
 	 * @return the info.
 	 * @since 2.8.4
 	 */

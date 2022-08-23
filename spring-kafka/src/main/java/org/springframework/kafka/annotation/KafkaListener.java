@@ -88,6 +88,20 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 @Documented
 @Repeatable(KafkaListeners.class)
 public @interface KafkaListener {
+	/**
+	 *
+	 * 将一个方法标记为指定主题上Kafka消息监听器的目标的注释。containerFactory()标识用于构建Kafka侦听
+	 * 器容器的KafkaListenerContainerFactory。如果没有设置，默认的容器工厂将被假定为可用的bean名称
+	 * 为kafkaListenerContainerFactory，除非配置中已经提供了显式的默认值。
+	 * @KafkaListener注释的处理是通过注册一个KafkaListenerAnnotationBeanPostProcessor来
+	 * 执行的。这可以手动完成，也可以更方便地通过EnableKafka注释完成。
+	 * 也就是说，允许带注释的方法具有与MessageMapping提供的类似的灵活签名
+	 *
+	 *
+	 * -------------
+	 *
+	 *
+	 */
 
 	/**
 	 * The unique identifier of the container for this listener.
@@ -96,6 +110,21 @@ public @interface KafkaListener {
 	 * in the consumer factory configuration, unless {@link #idIsGroup()}
 	 * is set to false or {@link #groupId()} is provided.
 	 * <p>SpEL {@code #{...}} and property place holders {@code ${...}} are supported.
+	 *
+	 *
+	 * <p>
+	 * 此侦听器的容器的唯一标识符。
+	 * 如果不指定，则使用自动生成的id。
+	 * 注意:当提供此值时，该值将覆盖消费者工厂配置中的组id属性，
+	 * 除非将idIsGroup()设置为false或提供groupId()。
+	 * ? #{…}和属性位置持有者${…支持}。
+	 *
+	 * ----------
+	 * 如果  没有设置 id，那么 @kafkaListener 注解 解析成 MethodKakfaListenerEndpoint 这个endpoint对象的id 就会通过
+	 * KafkaListenerAnnotationBeanPostProcessor#getEndpointId 方法自动生成
+	 *
+	 * </p>
+	 *
 	 * @return the {@code id} for the container managing for this endpoint.
 	 * @see org.springframework.kafka.config.KafkaListenerEndpointRegistry#getListenerContainer(String)
 	 */
@@ -108,6 +137,13 @@ public @interface KafkaListener {
 	 * If not specified, the default container factory is used, if any. If a SpEL
 	 * expression is provided ({@code #{...}}), the expression can either evaluate to a
 	 * container factory instance or a bean name.
+	 *
+	 * <p>
+	 *  kafkalistenercontainerfactory的bean名，用来创建负责服务于此端点的消息侦听器容器。
+	 * 如果没有指定，则使用默认的容器工厂(如果有的话)。如果提供了一个SpEL表达式(#{…})，
+	 * 该表达式可以求值为容器工厂实例或bean名称。
+	 * </p>
+	 *
 	 * @return the container factory bean name.
 	 */
 	String containerFactory() default "";
@@ -119,6 +155,13 @@ public @interface KafkaListener {
 	 * This uses group management and Kafka will assign partitions to group members.
 	 * <p>
 	 * Mutually exclusive with {@link #topicPattern()} and {@link #topicPartitions()}.
+	 *
+	 * <p>
+	 *     此侦听器的主题。条目可以是“主题名称”、“属性-占位符键”或“表达式”。表达式必须解析为主题名称。
+	 *     这使用组管理，Kafka将分配分区给组成员。
+	 * 与topicPattern()和topicPartitions()互斥。
+	 * </p>
+	 *
 	 * @return the topic names or expressions (SpEL) to listen to.
 	 */
 	String[] topics() default {};
@@ -133,7 +176,18 @@ public @interface KafkaListener {
 	 * This uses group management and Kafka will assign partitions to group members.
 	 * <p>
 	 * Mutually exclusive with {@link #topics()} and {@link #topicPartitions()}.
+	 *
+	 * <p>
+	 *     此侦听器的主题模式。条目可以是“主题模式”、“属性-占位符键”或“表达式”。
+	 *     框架将创建一个容器，该容器订阅与指定模式匹配的所有主题，以获得动态分配的分区。
+	 *     模式匹配将定期针对检查时存在的主题执行。表达式必须解析为主题模式(支持字符串或模式结果类型)。
+	 *     这使用组管理，Kafka将分配分区给组成员。
+	 * 与topics()和topicPartitions()互斥。
+	 * </p>
+	 *
 	 * @return the topic pattern or expression (SpEL).
+	 *
+	 *
 	 * @see org.apache.kafka.clients.CommonClientConfigs#METADATA_MAX_AGE_CONFIG
 	 */
 	String topicPattern() default "";
@@ -143,6 +197,10 @@ public @interface KafkaListener {
 	 * assignment.
 	 * <p>
 	 * Mutually exclusive with {@link #topicPattern()} and {@link #topics()}.
+	 * <p>
+	 *     当使用手动主题/分区分配时，此侦听器的topicPartitions。
+	 * 与topicPattern()和topics()互斥。
+	 * </p>
 	 * @return the topic names or expressions (SpEL) to listen to.
 	 */
 	TopicPartition[] topicPartitions() default {};
@@ -157,6 +215,18 @@ public @interface KafkaListener {
 	 * instead.
 	 * <p>
 	 * SpEL {@code #{...}} and property place holders {@code ${...}} are supported.
+	 *
+	 * <p>
+	 *     如果提供，这个侦听器的侦听器容器将被添加到一个bean中，该bean的名称为这个值，
+	 *     类型为Collection&lt;MessageListenerContainer&gt;例如，这允许对集合进行迭代，
+	 *     以启动/停止容器的子集。收集bean在2.7.3版本中已弃用，并将在2.8版本中删除。
+	 *     相反，使用名称为containerGroup +的bean。并且应该使用org.springframework.kafka.listener.
+	 *     ContainerGroup类型。
+	 * ? #{…}和属性位置持有者${…支持}。
+	 * 返回:
+	 * 组的bean名称。
+	 * </p>
+	 *
 	 * @return the bean name for the group.
 	 */
 	String containerGroup() default "";
@@ -176,6 +246,11 @@ public @interface KafkaListener {
 	 * Override the {@code group.id} property for the consumer factory with this value
 	 * for this listener only.
 	 * <p>SpEL {@code #{...}} and property place holders {@code ${...}} are supported.
+	 *
+	 * <p>
+	 *     覆盖。使用此值仅为该侦听器的消费者工厂Id属性。
+	 * ? #{…}和属性位置持有者${…支持}。
+	 * </p>
 	 * @return the group id.
 	 * @since 1.3
 	 */
@@ -185,6 +260,9 @@ public @interface KafkaListener {
 	 * When {@link #groupId() groupId} is not provided, use the {@link #id() id} (if
 	 * provided) as the {@code group.id} property for the consumer. Set to false, to use
 	 * the {@code group.id} from the consumer factory.
+	 * <p>
+	 *     当没有提供groupId时，使用id(如果提供)作为组。使用者的Id属性。设置为false，则使用组。我是消费者工厂的。
+	 * </p>
 	 * @return false to disable.
 	 * @since 1.3
 	 */
@@ -195,6 +273,11 @@ public @interface KafkaListener {
 	 * configuration. A suffix ('-n') is added for each container instance to ensure
 	 * uniqueness when concurrency is used.
 	 * <p>SpEL {@code #{...}} and property place holders {@code ${...}} are supported.
+	 *
+	 * <p>
+	 *     当提供时，重写消费者工厂配置中的客户端id属性。为每个容器实例添加一个后缀('-n')，以确保使用并发时的唯一性。
+	 * ? #{…}和属性位置持有者${…支持}。
+	 * </p>
 	 * @return the client id prefix.
 	 * @since 2.1.1
 	 */
@@ -207,6 +290,11 @@ public @interface KafkaListener {
 	 * Default '__listener'.
 	 * <p>
 	 * Example: {@code topics = "#{__listener.topicList}"}.
+	 * <p>
+	 *     这个注释中的SpEL表达式中使用的伪bean名，用于引用在其中定义侦听器的当前bean。
+	 *     这允许访问外围bean中的属性和方法。默认“__listener”。
+	 * 例如:topics = "#{__listener.topicList}"。
+	 * </p>
 	 * @return the pseudo bean name.
 	 * @since 2.1.2
 	 */
@@ -217,6 +305,12 @@ public @interface KafkaListener {
 	 * be a property placeholder or SpEL expression that evaluates to a {@link Number}, in
 	 * which case {@link Number#intValue()} is used to obtain the value.
 	 * <p>SpEL {@code #{...}} and property place holders {@code ${...}} are supported.
+	 * <p>
+	 *     为这个侦听器重写容器工厂的并发性设置。可以是一个属性占位符或求值为Number的SpEL表达式，在这种情况下使用Number. intvalue()来获取值。
+	 * ? #{…}和属性位置持有者${…支持}。
+	 * 返回:
+	 * 并发性。
+	 * </p>
 	 * @return the concurrency.
 	 * @since 2.2
 	 */
@@ -228,6 +322,10 @@ public @interface KafkaListener {
 	 * a {@link String}, in which case the {@link Boolean#parseBoolean(String)} is used to
 	 * obtain the value.
 	 * <p>SpEL {@code #{...}} and property place holders {@code ${...}} are supported.
+	 * <p>
+	 *     设置为true或false，以覆盖容器工厂中的默认设置。可以是一个属性占位符或计算为布尔值或String值的SpEL表达式，在这种情况下使用Boolean. parseboolean (String)来获取值。
+	 * ? #{…}和属性位置持有者${…支持}。
+	 * </p>
 	 * @return true to auto start, false to not auto start.
 	 * @since 2.2
 	 */
@@ -278,6 +376,16 @@ public @interface KafkaListener {
 	 * ({@code #{...}}), the expression can either evaluate to a
 	 * {@link org.springframework.messaging.converter.SmartMessageConverter} instance or a
 	 * bean name.
+	 *
+	 * <p>
+	 *     设置org.springframework.messaging.converter.SmartMessageConverter(例如org.springframewor
+	 *     k.messaging.converter.CompositeMessageConverter)的bean名，以便与org.springframewo
+	 *     rk.messaging.MessageHeaders一起使用。CONTENT_TYPE头来执行到所需类型的转换。
+	 *     如果提供了一个SpEL表达式(#{…})，该表达式可以计算为org.springframework.messaging.converter.
+	 *     SmartMessageConverter实例或bean名。
+	 *
+	 *
+	 * </p>
 	 * @return the bean name.
 	 * @since 2.7.1
 	 */
@@ -292,6 +400,11 @@ public @interface KafkaListener {
 	 * record listener. If not set, the container factory setting is used. SpEL and
 	 * property placeholders are not supported because the listener type cannot be
 	 * variable.
+	 * <P>
+	 *     重写容器工厂的batchListener属性。监听器方法签名应该接收一个List&lt;?&gt;;请参阅参考文档。这允许一个容器工厂同时用于记录侦听器和批处理侦听器;以前需要单独的集装箱工厂。
+	 * 返回:
+	 * “true”表示带注释的方法是批处理侦听器，“false”表示记录侦听器。如果没有设置，则使用容器工厂设置。不支持拼写和属性占位符，因为侦听器类型不能是可变的。
+	 * </P>
 	 * @since 2.8
 	 * @see Boolean#parseBoolean(String)
 	 */
@@ -320,6 +433,11 @@ public @interface KafkaListener {
 	 * must resolve to a String or {@code byte[]}.
 	 * <p>
 	 * This header will be stripped out if an outbound record is created with the headers
+	 * <P>
+	 *     静态信息将被添加为头部，关键字为org.springframework.kafka.support kafkaheaders . listener_info。例如，可以在org.springframework.kafka.listener中使用。recordfilterstrategy，或者监听器本身。
+	 * ? #{…}和属性位置持有者${…}支持，但它必须解析为String或byte[]。
+	 * 如果使用输入记录的标头创建出站记录，则该标头将被删除。
+	 * </P>
 	 * from an input record.
 	 * @return the info.
 	 * @since 2.8.4

@@ -284,6 +284,7 @@ public class KafkaListenerAnnotationBeanPostProcessor<K, V>
 
 	@Override
 	public void afterSingletonsInstantiated() {
+		// // 对"注册员"信息的完善
 		this.registrar.setBeanFactory(this.beanFactory);
 
 		if (this.beanFactory instanceof ListableBeanFactory) {
@@ -319,6 +320,8 @@ public class KafkaListenerAnnotationBeanPostProcessor<K, V>
 		}
 
 		// Actually register all listeners
+		// 整个方法这里才是关键
+		// 创建MessageListenerContainer并注册
 		this.registrar.afterPropertiesSet();
 		Map<String, ContainerGroupSequencer> sequencers =
 				this.applicationContext.getBeansOfType(ContainerGroupSequencer.class, false, false);
@@ -377,6 +380,10 @@ public class KafkaListenerAnnotationBeanPostProcessor<K, V>
 				for (Map.Entry<Method, Set<KafkaListener>> entry : annotatedMethods.entrySet()) {
 					Method method = entry.getKey();
 					for (KafkaListener listener : entry.getValue()) {
+						/**
+						 * Kafka-spring 整合的入口点
+						 *
+						 */
 						processKafkaListener(listener, method, bean, beanName);
 					}
 				}
@@ -467,7 +474,17 @@ public class KafkaListenerAnnotationBeanPostProcessor<K, V>
 
 	protected void processKafkaListener(KafkaListener kafkaListener, Method method, Object bean, String beanName) {
 		Method methodToUse = checkProxy(method, bean);
+
 		MethodKafkaListenerEndpoint<K, V> endpoint = new MethodKafkaListenerEndpoint<>();
+		/**
+		 * MethodKafkaListenerEndpoint 在 持有了 @KafakListener注解标注的方法之后，
+		 *
+		 * 这里的processKafkaListener 方法会通过KafkaListenerEndpointRegistry的 方法createListenerContainer
+		 * 来根据Endpoint创建一个MessageListenerContainer
+		 * 触发 Endpoint对象的 setUpListenerContainer方法的执行
+		 *
+		 *
+		 */
 		endpoint.setMethod(methodToUse);
 
 		String beanRef = kafkaListener.beanRef();
@@ -610,6 +627,7 @@ public class KafkaListenerAnnotationBeanPostProcessor<K, V>
 		KafkaListenerContainerFactory<?> listenerContainerFactory = resolveContainerFactory(kafkaListener,
 				containerFactory, beanName);
 
+		// 注册已经封装好的消费端-endpoint
 		this.registrar.registerEndpoint(endpoint, listenerContainerFactory);
 	}
 
@@ -618,6 +636,18 @@ public class KafkaListenerAnnotationBeanPostProcessor<K, V>
 
 		endpoint.setBean(bean);
 		endpoint.setMessageHandlerMethodFactory(this.messageHandlerMethodFactory);
+		/**
+		 * endpoint的id 会使用@KafakListener注解中指定的id，如果注解中没有指定id 则会是用如下生成规则：
+		 *  "org.springframework.kafka.KafkaListenerEndpointContainer#";+count.getAndIncre
+		 *
+		 *  endpoint的id 又会 被 作为
+		 *  (1)键值对的键
+		 *  String id = endpoint.getId();
+		 *  this.listenerContainers.put(id, messageListenercontainer);
+		 *  （2） container的beanName
+		 *  JavaUtils.INSTANCE.acceptIfNotNull(endpoint.getId(), messageListenercontainer::setBeanName);
+		 *
+		 */
 		endpoint.setId(getEndpointId(kafkaListener));
 		endpoint.setGroupId(getEndpointGroupId(kafkaListener, endpoint.getId()));
 		endpoint.setTopicPartitions(tps);

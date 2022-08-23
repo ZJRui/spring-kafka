@@ -42,6 +42,7 @@ import org.springframework.validation.Validator;
  *
  * @see org.springframework.kafka.annotation.KafkaListenerConfigurer
  */
+@SuppressWarnings("all")
 public class KafkaListenerEndpointRegistrar implements BeanFactoryAware, InitializingBean {
 
 	private final List<KafkaListenerEndpointDescriptor> endpointDescriptors = new ArrayList<>();
@@ -188,14 +189,18 @@ public class KafkaListenerEndpointRegistrar implements BeanFactoryAware, Initial
 
 	protected void registerAllEndpoints() {
 		synchronized (this.endpointDescriptors) {
+			// 这里是真正的创建ListenerContainer监听对象并注册
 			for (KafkaListenerEndpointDescriptor descriptor : this.endpointDescriptors) {
 				if (descriptor.endpoint instanceof MultiMethodKafkaListenerEndpoint
 						&& this.validator != null) {
 					((MultiMethodKafkaListenerEndpoint) descriptor.endpoint).setValidator(this.validator);
 				}
+				// 这里是真正的创建ListenerContainer监听对象并注册
 				this.endpointRegistry.registerListenerContainer(
 						descriptor.endpoint, resolveContainerFactory(descriptor));
 			}
+			// 启动时所有消息监听对象都注册之后，便将参数置为true
+
 			this.startImmediately = true;  // trigger immediate startup
 		}
 	}
@@ -234,11 +239,14 @@ public class KafkaListenerEndpointRegistrar implements BeanFactoryAware, Initial
 		// Factory may be null, we defer the resolution right before actually creating the container
 		KafkaListenerEndpointDescriptor descriptor = new KafkaListenerEndpointDescriptor(endpoint, factory);
 		synchronized (this.endpointDescriptors) {
+			// 如果到了需要立即启动监听的阶段就直接注册并监听(也就是创建消息监听容器并启动)
 			if (this.startImmediately) { // Register and start immediately
 				this.endpointRegistry.registerListenerContainer(descriptor.endpoint,
 						resolveContainerFactory(descriptor), true);
 			}
 			else {
+				// 一般情况都先走这一步，添加至此列表，待bean后续的生命周期 统一注册并启动
+
 				this.endpointDescriptors.add(descriptor);
 			}
 		}
